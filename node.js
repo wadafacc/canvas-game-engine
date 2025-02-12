@@ -1,10 +1,12 @@
-class Node {
+import { Physics } from './physics.js';
+
+export class Node {
   position = { x: 0, y: 0 }; // x : y
   velocity = { x: 0, y: 0 }; // x : y
-
-
-  physics_mode; // static : dynamic
   collider = { x: 0, y: 0, w: 0, h: 0 }; // local coordinates
+
+
+  mode = Physics.STATIC; // static : dynamic
 
   width = 0;
   height = 0;

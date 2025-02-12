@@ -1,13 +1,18 @@
-class Engine {
+import { Time } from './time.js';
+import { Comparator } from './comparator.js';
+import { AAAAAAAAAAAAAAAAAAAABB } from './aaaaaaaaaaaaaaaaaaaabb.js';
+
+export class Engine {
   bounds;
   mousepos; // x : y
   gravity = { x: 0, y: 0 }; // godot-style
 
   time = new Time();
   #comp = new Comparator();
-  #coordhandler = new CollisionHandler();
+  #coordhandler = new AAAAAAAAAAAAAAAAAAAABB();
 
-  #nodes = [];
+  #dyn_tree = [];
+  #static_tree = [];
   #canvas;
   #ctx;
   #running = false;
@@ -42,7 +47,7 @@ class Engine {
     // if click is within bounds
 
     // ((clickPos.x >= e.position.x && clickPos.x <= e.position.x + e.width) && (clickPos.y >= e.position.y && clickPos.y <= e.position.y + e.height))
-    const item = this.#nodes.find((e) => this.#coordhandler.check_bounds(clickPos, { x: e.position.x, y: e.position.y }, e));
+    const item = this.#dyn_tree.find((e) => this.#coordhandler.check_bounds(clickPos, { x: e.position.x, y: e.position.y }, e));
 
     if (item) {
       item['on_click'](e);
@@ -50,14 +55,14 @@ class Engine {
   }
 
   #key_down(e) {
-    const item = this.#nodes.find((el) => el.keys[`${e.key}`] != undefined);
+    const item = this.#dyn_tree.find((el) => el.keys[`${e.key}`] != undefined);
     if (item) {
       item.keys[`${e.key}`] = true;
     }
   }
 
   #key_up(e) {
-    const item = this.#nodes.find((el) => el.keys[`${e.key}`] != undefined);
+    const item = this.#dyn_tree.find((el) => el.keys[`${e.key}`] != undefined);
     if (item) {
       item.keys[`${e.key}`] = false;
     }
@@ -86,8 +91,8 @@ class Engine {
       this.delta_time = this.time.get_delta();
       this.#get_fps();
 
-      for (let i = 0; i < this.#nodes.length; i++) {
-        let element = this.#nodes[i];
+      for (let i = 0; i < this.#dyn_tree.length; i++) {
+        let element = this.#dyn_tree[i];
         element['process'](this.delta_time);
 
         // out of bounds check
@@ -126,7 +131,7 @@ class Engine {
   }
 
   register(element) {
-    this.#nodes.push(element);
-    console.log(this.#nodes);
+    this.#dyn_tree.push(element);
+    console.log(this.#dyn_tree);
   }
 }

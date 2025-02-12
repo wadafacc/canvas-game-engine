@@ -1,4 +1,6 @@
-class CollisionHandler {
+import { Comparator } from './comparator.js';
+// uses AABB - model
+export class AAAAAAAAAAAAAAAAAAAABB {
   c = new Comparator();
 
   local_to_global(parent, local_coords) {

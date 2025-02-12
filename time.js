@@ -1,4 +1,4 @@
-class Time {
+export class Time {
   #start_time;
   #last_time;
 
