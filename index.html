@@ -39,27 +39,32 @@
 
   const game = new Engine(document.getElementById('canvas'));
 
-  //   constructor(sprite, width, height, position)
+  //   constructor(sprite, width, height, pos)
   const node = new Node(undefined, 150, 150, { x: 100, y: 100 });
+  node.attach_collider({ x: 0, y: 0, width: 150, height: 150 });
   node.damp = 0.25;
   node.on_click = (e) => {
-    console.log(node)
+    console.log(node.id)
   };
-
+  
   node.on_key("w", () => {
-    node.velocity.y = -500;
+    node.velocity.y = -250;
   });
   node.on_key("s", () => {
-    node.velocity.y = 500;
+    node.velocity.y = 250;
   });
   node.on_key("a", () => {
-    node.velocity.x = -500;
+    node.velocity.x = -250;
   });
   node.on_key("d", () => {
-    node.velocity.x = 500;
+    node.velocity.x = 250;
   });
 
+  const block = new Node(undefined, 50, 50, { x: 300, y: 300 });
+  block.attach_collider({ x: 0, y: 0, width: 50, height: 50 });
+
   game.register(node);
+  game.register(block);
 
   game.start();
 

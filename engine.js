@@ -1,6 +1,7 @@
 import { Time } from './time.js';
 import { Comparator } from './comparator.js';
 import { AAAAAAAAAAAAAAAAAAAABB } from './aaaaaaaaaaaaaaaaaaaabb.js';
+import { Directions, Physics } from './physics.js';
 
 export class Engine {
   bounds;
@@ -9,7 +10,8 @@ export class Engine {
 
   time = new Time();
   #comp = new Comparator();
-  #coordhandler = new AAAAAAAAAAAAAAAAAAAABB();
+  // coordinate / collision handler
+  #ch = new AAAAAAAAAAAAAAAAAAAABB();
 
   #dyn_tree = [];
   #static_tree = [];
@@ -46,8 +48,8 @@ export class Engine {
     const clickPos = { x: (e.x - this.#canvas.offsetLeft), y: (e.y - this.#canvas.offsetTop) };
     // if click is within bounds
 
-    // ((clickPos.x >= e.position.x && clickPos.x <= e.position.x + e.width) && (clickPos.y >= e.position.y && clickPos.y <= e.position.y + e.height))
-    const item = this.#dyn_tree.find((e) => this.#coordhandler.check_bounds(clickPos, { x: e.position.x, y: e.position.y }, e));
+    // ((clickPos.x >= e.pos.x && clickPos.x <= e.pos.x + e.width) && (clickPos.y >= e.pos.y && clickPos.y <= e.pos.y + e.height))
+    const item = this.#dyn_tree.find((e) => this.#ch.check_bounds(clickPos, { x: e.pos.x, y: e.pos.y }, e));
 
     if (item) {
       item['on_click'](e);
@@ -85,36 +87,51 @@ export class Engine {
   */
 
   async #update() {
-    this.time.init(); // init timing function
-    while (this.#running) {
-      this.#ctx.reset();
-      this.delta_time = this.time.get_delta();
-      this.#get_fps();
+    this.#ctx.reset();
+    this.delta_time = this.time.get_delta();
+    this.#get_fps();
 
-      for (let i = 0; i < this.#dyn_tree.length; i++) {
-        let element = this.#dyn_tree[i];
-        element['process'](this.delta_time);
+    for (let i = 0; i < this.#dyn_tree.length; i++) {
+      let element = this.#dyn_tree[i];
 
-        // out of bounds check
-        if (element.position.x > this.bounds.x | element.position.y > this.bounds.y) {
-          console.log("t")
-          return;
-        }
+      element['process'](this.delta_time);
 
-        this.#ctx.fillRect(element.position.x, element.position.y, element.width, element.height);
+      element.collision_mask = this.#collision_check(element);
 
-        this.#ctx.fillStyle = 'blue';
-        this.#ctx.fillRect(element.position.x, element.position.y, 5, 5);
-        /*
-        if (element.sprite) {
-          this.#ctx.drawImage()
-        }
-        */
+
+      // collider
+      this.#ctx.beginPath();
+      this.#ctx.strokeStyle = 'green';
+      this.#ctx.lineWidth = '5';
+      const local = this.#ch.to_global(element, element.collider);
+      this.#ctx.rect(local.x,local.y, element.collider.width, element.collider.height);
+      this.#ctx.stroke();
+      
+      
+      this.#ctx.fillStyle = 'black';
+      this.#ctx.fillRect(element.pos.x, element.pos.y, element.width, element.height);
+      
+      this.#ctx.fillStyle = 'red';
+      const center = element.get_global_center();
+      this.#ctx.fillRect(center.x, center.y, 2, 2);
+      
+      this.#ctx.fillStyle = 'white';
+      this.#ctx.font = "10px consolas";
+      this.#ctx.fillText(`${element.collision_mask}`, element.pos.x + 5, element.pos.y + 10);
+      /*
+      if (element.sprite) {
+        this.#ctx.drawImage()
       }
+      */
 
-      this.#frame_count++;
-      this.#elapsed += this.delta_time;
-      await new Promise(res => setTimeout(res, 0.1));  // needed; Javascript is single thread, meaning infinite loops lead to a softlock that stops everything else from loading
+
+    }
+
+    this.#frame_count++;
+    this.#elapsed += this.delta_time;
+
+    if (this.#running) {
+      requestAnimationFrame(() => this.#update());
     }
   }
 
@@ -122,16 +139,43 @@ export class Engine {
   -------------------
   */
 
+  // called on every body that has a collider
+  #collision_check(node) {
+    for (let i = 0; i < this.#dyn_tree.length; i++) {
+      // check against each node
+      let x = this.#dyn_tree[i];
+
+      // skip if its itself
+      if (x.id == node.id) {
+        continue;
+      }
+
+      let coll_x = this.#ch.check_collision_x(node, x);
+      let coll_y = this.#ch.check_collision_y(node, x);
+    
+      if (coll_x && coll_y) {
+        
+      }
+    }
+    return {
+      x: 0,
+      y: 0,
+    }
+  }
+
 
   // public stuff
   start() {
     this.#running = true;
     this.delta_time = Date.now(); // init delta_time
+    this.time.init(); // init timing function
     this.#update();
   }
 
   register(element) {
-    this.#dyn_tree.push(element);
-    console.log(this.#dyn_tree);
+    if (element.mode == Physics.DYNAMIC) {
+      this.#dyn_tree.push(element);
+    }
+    console.log(element.id);
   }
 }
